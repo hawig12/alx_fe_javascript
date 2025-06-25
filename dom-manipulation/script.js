@@ -5,7 +5,10 @@ const quotes = [
   { text: "Knowledge is power.", category: "Education" }
 ];
 
-// ✅ Fetch quotes from a real server (GET)
+// To keep track of last sync state for conflict detection
+let lastSyncedQuotes = [];
+
+// === Fetch quotes from a real server (GET) ===
 async function fetchQuotesFromServer() {
   try {
     const response = await fetch("https://jsonplaceholder.typicode.com/posts");
@@ -22,7 +25,7 @@ async function fetchQuotesFromServer() {
   }
 }
 
-// ✅ POST a quote to the server (simulated)
+// === POST a quote to the server (simulated) ===
 async function postQuoteToServer(quote) {
   try {
     const response = await fetch("https://jsonplaceholder.typicode.com/posts", {
@@ -42,35 +45,102 @@ async function postQuoteToServer(quote) {
   }
 }
 
-// ✅ Sync local quotes with server
-function syncWithServer() {
+// === Sync local quotes with server with conflict detection and resolution ===
+async function syncWithServer() {
   console.log("Syncing with server...");
+  const serverData = await fetchQuotesFromServer();
 
-  fetchQuotesFromServer().then(serverData => {
-    let newItems = 0;
+  // Detect conflicts: quotes with same text but different category
+  const conflicts = [];
 
-    serverData.forEach(serverQuote => {
-      const exists = quotes.some(localQuote =>
-        localQuote.text === serverQuote.text &&
-        localQuote.category === serverQuote.category
-      );
+  // Create lookup for local quotes by text
+  const localQuotesMap = new Map();
+  quotes.forEach(q => localQuotesMap.set(q.text, q));
 
-      if (!exists) {
-        quotes.push(serverQuote);
-        newItems++;
+  // Go through server data and compare to local data
+  serverData.forEach(serverQuote => {
+    const localQuote = localQuotesMap.get(serverQuote.text);
+
+    if (localQuote) {
+      // Conflict: text matches but category differs
+      if (localQuote.category !== serverQuote.category) {
+        conflicts.push({ local: localQuote, server: serverQuote });
       }
-    });
-
-    if (newItems > 0) {
-      populateCategories();
-      showNotification(`${newItems} new quote(s) synced from server.`);
     } else {
-      console.log("No new quotes from server.");
+      // New quote from server, add it
+      quotes.push(serverQuote);
     }
   });
+
+  // Also check if any local quotes are not on server (simulate server overwrite)
+  // For simplicity, assume server data overrides local data in conflicts
+  if (conflicts.length > 0) {
+    handleConflicts(conflicts);
+  } else {
+    // No conflicts - just update categories and notify if new quotes added
+    populateCategories();
+    showNotification("Quotes synced with server successfully.");
+  }
+
+  // Save last synced state (deep clone)
+  lastSyncedQuotes = JSON.parse(JSON.stringify(quotes));
 }
 
-// ✅ Show a random quote (optionally filtered)
+// === Handle conflicts by notifying user and offering manual resolution ===
+function handleConflicts(conflicts) {
+  const conflictBox = document.getElementById("conflictBox");
+  conflictBox.innerHTML = `<h3>Conflicts detected! Please resolve:</h3>`;
+
+  conflicts.forEach(({ local, server }, index) => {
+    const conflictDiv = document.createElement("div");
+    conflictDiv.className = "conflictItem";
+
+    conflictDiv.innerHTML = `
+      <p><strong>Quote:</strong> "${local.text}"</p>
+      <p>Local Category: <em>${local.category}</em></p>
+      <p>Server Category: <em>${server.category}</em></p>
+      <button id="keepLocal${index}">Keep Local</button>
+      <button id="keepServer${index}">Keep Server</button>
+    `;
+
+    conflictBox.appendChild(conflictDiv);
+
+    // Event listeners for conflict resolution buttons
+    document.getElementById(`keepLocal${index}`).onclick = () => {
+      resolveConflict(local.text, local.category);
+      conflictDiv.remove();
+      checkConflictResolved(conflictBox);
+    };
+    document.getElementById(`keepServer${index}`).onclick = () => {
+      resolveConflict(local.text, server.category);
+      conflictDiv.remove();
+      checkConflictResolved(conflictBox);
+    };
+  });
+
+  conflictBox.style.display = "block";
+}
+
+// === Apply user's conflict resolution choice ===
+function resolveConflict(quoteText, chosenCategory) {
+  // Find the quote in local quotes and update category
+  const quote = quotes.find(q => q.text === quoteText);
+  if (quote) {
+    quote.category = chosenCategory;
+  }
+
+  populateCategories();
+  showNotification(`Conflict for quote "${quoteText}" resolved.`);
+}
+
+// === Check if all conflicts resolved and hide conflict box ===
+function checkConflictResolved(conflictBox) {
+  if (conflictBox.children.length === 0) {
+    conflictBox.style.display = "none";
+  }
+}
+
+// === Show a random quote (optionally filtered) ===
 function showRandomQuote(category = "all") {
   const filteredQuotes = category === "all"
     ? quotes
@@ -87,13 +157,21 @@ function showRandomQuote(category = "all") {
   display.innerHTML = `<p>"${randomQuote.text}" - <em>${randomQuote.category}</em></p>`;
 }
 
-// ✅ Add a new quote and POST to server
+// === Add a new quote and POST to server ===
 function addQuote() {
   const quoteText = document.getElementById('newQuoteText').value.trim();
   const quoteCategory = document.getElementById('newQuoteCategory').value.trim();
 
   if (quoteText && quoteCategory) {
     const newQuote = { text: quoteText, category: quoteCategory };
+
+    // Prevent duplicate quotes
+    const exists = quotes.some(q => q.text === newQuote.text);
+    if (exists) {
+      alert("This quote already exists.");
+      return;
+    }
+
     quotes.push(newQuote);
     populateCategories();
     showRandomQuote();
@@ -108,7 +186,7 @@ function addQuote() {
   }
 }
 
-// ✅ Create the Add Quote form dynamically
+// === Create the Add Quote form dynamically ===
 function createAddQuoteForm() {
   const formContainer = document.createElement('div');
 
@@ -135,9 +213,11 @@ function createAddQuoteForm() {
   addBtn.addEventListener('click', addQuote);
 }
 
-// ✅ Populate dropdown with unique categories
+// === Populate dropdown with unique categories ===
 function populateCategories() {
   const dropdown = document.getElementById('categoryFilter');
+  if (!dropdown) return;
+
   const categories = [...new Set(quotes.map(q => q.category))];
 
   dropdown.innerHTML = '<option value="all">All Categories</option>';
@@ -155,13 +235,13 @@ function populateCategories() {
   }
 }
 
-// ✅ Filter quotes by selected category
+// === Filter quotes by selected category ===
 function filterQuotes(category) {
   localStorage.setItem('selectedCategory', category);
   showRandomQuote(category);
 }
 
-// ✅ Export local quotes to JSON file
+// === Export local quotes to JSON file ===
 function exportQuotes() {
   const dataStr = JSON.stringify(quotes, null, 2);
   const blob = new Blob([dataStr], { type: "application/json" });
@@ -175,7 +255,7 @@ function exportQuotes() {
   URL.revokeObjectURL(url);
 }
 
-// ✅ Import quotes from a JSON file
+// === Import quotes from a JSON file ===
 function importQuotes(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -187,7 +267,10 @@ function importQuotes(event) {
       if (Array.isArray(importedQuotes)) {
         importedQuotes.forEach(q => {
           if (q.text && q.category) {
-            quotes.push(q);
+            // Avoid duplicates when importing
+            if (!quotes.some(existing => existing.text === q.text)) {
+              quotes.push(q);
+            }
           }
         });
         populateCategories();
@@ -202,7 +285,7 @@ function importQuotes(event) {
   reader.readAsText(file);
 }
 
-// ✅ Show a user notification
+// === Show a user notification ===
 function showNotification(message) {
   const box = document.getElementById("notificationBox");
   box.innerText = message;
@@ -212,11 +295,15 @@ function showNotification(message) {
   }, 5000);
 }
 
-// ✅ Initialize app
+// === Initialize app ===
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('showQuoteBtn').addEventListener('click', () => {
     const category = document.getElementById('categoryFilter').value;
     showRandomQuote(category);
+  });
+
+  document.getElementById('categoryFilter').addEventListener('change', e => {
+    filterQuotes(e.target.value);
   });
 
   document.getElementById('exportQuotesBtn').addEventListener('click', exportQuotes);
@@ -224,6 +311,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   createAddQuoteForm();
   populateCategories();
+  showRandomQuote();
 
   // Periodic sync every 10 seconds
   setInterval(syncWithServer, 10000);
