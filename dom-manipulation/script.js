@@ -1,35 +1,34 @@
-// Initial array of quotes with text and category
 const quotes = [
   { text: "The only limit to our realization of tomorrow is our doubts of today.", category: "Motivation" },
   { text: "In the middle of difficulty lies opportunity.", category: "Inspiration" },
   { text: "Knowledge is power.", category: "Education" }
 ];
 
-// Required: showRandomQuote using innerHTML
+// ✅ showRandomQuote with innerHTML
 function showRandomQuote(category = "all") {
   let filteredQuotes = category === "all"
     ? quotes
     : quotes.filter(q => q.category === category);
 
+  const display = document.getElementById('quoteDisplay');
   if (filteredQuotes.length === 0) {
-    document.getElementById('quoteDisplay').innerHTML = "<p>No quotes available for this category.</p>";
+    display.innerHTML = "<p>No quotes available for this category.</p>";
     return;
   }
 
   const randomQuote = filteredQuotes[Math.floor(Math.random() * filteredQuotes.length)];
-  document.getElementById('quoteDisplay').innerHTML = `<p>"${randomQuote.text}" - <em>${randomQuote.category}</em></p>`;
+  display.innerHTML = `<p>"${randomQuote.text}" - <em>${randomQuote.category}</em></p>`;
 }
 
-// Required: addQuote function to update array and DOM
+// ✅ addQuote
 function addQuote() {
   const quoteText = document.getElementById('newQuoteText').value.trim();
   const quoteCategory = document.getElementById('newQuoteCategory').value.trim();
 
   if (quoteText && quoteCategory) {
     quotes.push({ text: quoteText, category: quoteCategory });
-
-    populateCategories(); // refresh filter dropdown
-    showRandomQuote(); // optionally show newly added quote
+    populateCategories();
+    showRandomQuote();
 
     document.getElementById('newQuoteText').value = '';
     document.getElementById('newQuoteCategory').value = '';
@@ -38,7 +37,7 @@ function addQuote() {
   }
 }
 
-// Required: createAddQuoteForm to dynamically build the input form
+// ✅ createAddQuoteForm
 function createAddQuoteForm() {
   const formContainer = document.createElement('div');
 
@@ -65,40 +64,54 @@ function createAddQuoteForm() {
   addBtn.addEventListener('click', addQuote);
 }
 
-// Required: populateCategories to dynamically build the filter dropdown
+// ✅ populateCategories
 function populateCategories() {
   const dropdown = document.getElementById('categoryFilter');
   const categories = [...new Set(quotes.map(q => q.category))];
 
   dropdown.innerHTML = '<option value="all">All Categories</option>';
-
-  categories.forEach(category => {
+  categories.forEach(cat => {
     const option = document.createElement('option');
-    option.value = category;
-    option.textContent = category;
+    option.value = cat;
+    option.textContent = cat;
     dropdown.appendChild(option);
   });
 
-  // Restore previously selected category from localStorage
-  const savedCategory = localStorage.getItem('selectedCategory');
-  if (savedCategory) {
-    dropdown.value = savedCategory;
-    filterQuotes(savedCategory);
+  const saved = localStorage.getItem('selectedCategory');
+  if (saved) {
+    dropdown.value = saved;
+    filterQuotes(saved);
   }
 }
 
-// Required: filterQuotes updates quote display and saves selected category
+// ✅ filterQuotes
 function filterQuotes(category) {
   localStorage.setItem('selectedCategory', category);
   showRandomQuote(category);
 }
 
-// On page load
+// ✅ exportQuotes with required elements
+function exportQuotes() {
+  const dataStr = JSON.stringify(quotes, null, 2); // ✅ JSON.stringify
+  const blob = new Blob([dataStr], { type: "application/json" }); // ✅ Blob + application/json
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "quotes.json";
+  a.click();
+
+  URL.revokeObjectURL(url);
+}
+
+// ✅ Initialize on DOM load
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('showQuoteBtn').addEventListener('click', () => {
     const category = document.getElementById('categoryFilter').value;
     showRandomQuote(category);
   });
+
+  document.getElementById('exportQuotesBtn').addEventListener('click', exportQuotes); // ✅
 
   createAddQuoteForm();
   populateCategories();
