@@ -5,11 +5,48 @@ const quotes = [
   { text: "Knowledge is power.", category: "Education" }
 ];
 
-// ✅ Mock server simulation (could be replaced by real API)
+// ✅ Simulated "server" data
 let mockServerQuotes = [
   { id: 1, text: "Stay hungry, stay foolish.", category: "Motivation" },
   { id: 2, text: "Do or do not. There is no try.", category: "Inspiration" }
 ];
+
+// ✅ Fetch quotes from server (simulated with Promise)
+function fetchQuotesFromServer() {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(mockServerQuotes);
+    }, 500); // Simulate network delay
+  });
+}
+
+// ✅ Sync local with server and resolve conflicts
+function syncWithServer() {
+  console.log("Syncing with server...");
+
+  fetchQuotesFromServer().then(serverData => {
+    let newItems = 0;
+
+    serverData.forEach(serverQuote => {
+      const exists = quotes.some(localQuote =>
+        localQuote.text === serverQuote.text &&
+        localQuote.category === serverQuote.category
+      );
+
+      if (!exists) {
+        quotes.push(serverQuote);
+        newItems++;
+      }
+    });
+
+    if (newItems > 0) {
+      populateCategories();
+      showNotification(`${newItems} new quote(s) synced from server.`);
+    } else {
+      console.log("No new quotes from server.");
+    }
+  });
+}
 
 // ✅ Show a random quote (optionally filtered)
 function showRandomQuote(category = "all") {
@@ -45,7 +82,7 @@ function addQuote() {
   }
 }
 
-// ✅ Create the add-quote form dynamically
+// ✅ Dynamically create the add-quote form
 function createAddQuoteForm() {
   const formContainer = document.createElement('div');
 
@@ -92,13 +129,13 @@ function populateCategories() {
   }
 }
 
-// ✅ Filter quotes and save selection
+// ✅ Filter quotes and show random from category
 function filterQuotes(category) {
   localStorage.setItem('selectedCategory', category);
   showRandomQuote(category);
 }
 
-// ✅ Export quotes as a JSON file
+// ✅ Export quotes as JSON file
 function exportQuotes() {
   const dataStr = JSON.stringify(quotes, null, 2);
   const blob = new Blob([dataStr], { type: "application/json" });
@@ -112,7 +149,7 @@ function exportQuotes() {
   URL.revokeObjectURL(url);
 }
 
-// ✅ Import quotes from a JSON file
+// ✅ Import quotes from JSON file
 function importQuotes(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -139,33 +176,7 @@ function importQuotes(event) {
   reader.readAsText(file);
 }
 
-// ✅ Simulate syncing with a remote server
-function syncWithServer() {
-  console.log("Syncing with server...");
-
-  const serverData = mockServerQuotes;
-
-  let newItems = 0;
-
-  serverData.forEach(serverQuote => {
-    const exists = quotes.some(localQuote =>
-      localQuote.text === serverQuote.text &&
-      localQuote.category === serverQuote.category
-    );
-
-    if (!exists) {
-      quotes.push(serverQuote);
-      newItems++;
-    }
-  });
-
-  if (newItems > 0) {
-    populateCategories();
-    showNotification(`${newItems} new quote(s) synced from server.`);
-  }
-}
-
-// ✅ Simple notification UI handler
+// ✅ Show notification for sync/import actions
 function showNotification(message) {
   const box = document.getElementById("notificationBox");
   box.innerText = message;
@@ -188,7 +199,6 @@ document.addEventListener('DOMContentLoaded', () => {
   createAddQuoteForm();
   populateCategories();
 
-  // Start periodic sync
-  setInterval(syncWithServer, 10000); // every 10 seconds
+  // Sync every 10 seconds
+  setInterval(syncWithServer, 10000);
 });
-
