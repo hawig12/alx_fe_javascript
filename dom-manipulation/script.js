@@ -5,13 +5,13 @@ const quotes = [
   { text: "Knowledge is power.", category: "Education" }
 ];
 
-// ✅ Fetch quotes from a real API using async/await
+// ✅ Fetch quotes from a real server (GET)
 async function fetchQuotesFromServer() {
   try {
     const response = await fetch("https://jsonplaceholder.typicode.com/posts");
     const data = await response.json();
 
-    // Simulate converting posts to quote format
+    // Convert posts into quote format
     return data.slice(0, 5).map(post => ({
       text: post.title,
       category: "Server"
@@ -22,7 +22,27 @@ async function fetchQuotesFromServer() {
   }
 }
 
-// ✅ Sync local quotes with server data
+// ✅ POST a quote to the server (simulated)
+async function postQuoteToServer(quote) {
+  try {
+    const response = await fetch("https://jsonplaceholder.typicode.com/posts", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(quote)
+    });
+
+    const result = await response.json();
+    console.log("Posted to server:", result);
+    showNotification("Quote sent to server (simulated).");
+  } catch (error) {
+    console.error("Failed to post quote:", error);
+    showNotification("Failed to send quote to server.");
+  }
+}
+
+// ✅ Sync local quotes with server
 function syncWithServer() {
   console.log("Syncing with server...");
 
@@ -50,7 +70,7 @@ function syncWithServer() {
   });
 }
 
-// ✅ Show a random quote
+// ✅ Show a random quote (optionally filtered)
 function showRandomQuote(category = "all") {
   const filteredQuotes = category === "all"
     ? quotes
@@ -67,24 +87,28 @@ function showRandomQuote(category = "all") {
   display.innerHTML = `<p>"${randomQuote.text}" - <em>${randomQuote.category}</em></p>`;
 }
 
-// ✅ Add a new quote
+// ✅ Add a new quote and POST to server
 function addQuote() {
   const quoteText = document.getElementById('newQuoteText').value.trim();
   const quoteCategory = document.getElementById('newQuoteCategory').value.trim();
 
   if (quoteText && quoteCategory) {
-    quotes.push({ text: quoteText, category: quoteCategory });
+    const newQuote = { text: quoteText, category: quoteCategory };
+    quotes.push(newQuote);
     populateCategories();
     showRandomQuote();
 
     document.getElementById('newQuoteText').value = '';
     document.getElementById('newQuoteCategory').value = '';
+
+    // Simulate POST to server
+    postQuoteToServer(newQuote);
   } else {
     alert("Please enter both a quote and a category.");
   }
 }
 
-// ✅ Dynamically create the add-quote form
+// ✅ Create the Add Quote form dynamically
 function createAddQuoteForm() {
   const formContainer = document.createElement('div');
 
@@ -111,7 +135,7 @@ function createAddQuoteForm() {
   addBtn.addEventListener('click', addQuote);
 }
 
-// ✅ Populate dropdown from unique categories
+// ✅ Populate dropdown with unique categories
 function populateCategories() {
   const dropdown = document.getElementById('categoryFilter');
   const categories = [...new Set(quotes.map(q => q.category))];
@@ -131,13 +155,13 @@ function populateCategories() {
   }
 }
 
-// ✅ Filter quotes and show one from selected category
+// ✅ Filter quotes by selected category
 function filterQuotes(category) {
   localStorage.setItem('selectedCategory', category);
   showRandomQuote(category);
 }
 
-// ✅ Export quotes to JSON file
+// ✅ Export local quotes to JSON file
 function exportQuotes() {
   const dataStr = JSON.stringify(quotes, null, 2);
   const blob = new Blob([dataStr], { type: "application/json" });
@@ -151,7 +175,7 @@ function exportQuotes() {
   URL.revokeObjectURL(url);
 }
 
-// ✅ Import quotes from JSON file
+// ✅ Import quotes from a JSON file
 function importQuotes(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -178,7 +202,7 @@ function importQuotes(event) {
   reader.readAsText(file);
 }
 
-// ✅ Show notification message
+// ✅ Show a user notification
 function showNotification(message) {
   const box = document.getElementById("notificationBox");
   box.innerText = message;
@@ -188,7 +212,7 @@ function showNotification(message) {
   }, 5000);
 }
 
-// ✅ Initialize app on page load
+// ✅ Initialize app
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('showQuoteBtn').addEventListener('click', () => {
     const category = document.getElementById('categoryFilter').value;
@@ -201,6 +225,6 @@ document.addEventListener('DOMContentLoaded', () => {
   createAddQuoteForm();
   populateCategories();
 
-  // Sync every 10 seconds
+  // Periodic sync every 10 seconds
   setInterval(syncWithServer, 10000);
 });
