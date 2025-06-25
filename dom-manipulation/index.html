@@ -4,25 +4,70 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Dynamic Quote Generator</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 800px;
+      margin: auto;
+      padding: 20px;
+    }
+
+    #notificationBox {
+      padding: 10px;
+      background: #fffae6;
+      border: 1px solid #ccc;
+      margin: 10px 0;
+      display: none;
+    }
+
+    #quoteDisplay {
+      margin: 20px 0;
+      font-size: 1.2em;
+      background: #f0f0f0;
+      padding: 15px;
+      border-left: 5px solid #ccc;
+    }
+
+    input[type="text"] {
+      margin: 5px;
+      padding: 8px;
+      width: calc(50% - 20px);
+    }
+
+    button {
+      padding: 8px 12px;
+      margin: 5px;
+    }
+
+    select {
+      padding: 6px;
+      margin: 5px;
+    }
+  </style>
 </head>
 <body>
+
   <h1>Dynamic Quote Generator</h1>
+
+  <!-- Notification -->
+  <div id="notificationBox"></div>
 
   <!-- Category Filter Dropdown -->
   <select id="categoryFilter" onchange="filterQuotes(this.value)">
     <option value="all">All Categories</option>
   </select>
 
-  <!-- Quote Display Area -->
-  <div id="quoteDisplay"></div>
+  <!-- Display Area for Random Quote -->
+  <div id="quoteDisplay">Click "Show New Quote" to begin.</div>
 
-<!-- Buttons -->
-<button id="showQuoteBtn">Show New Quote</button>
-<button id="exportQuotesBtn">Export Quotes</button>
-<input type="file" id="importQuotesInput" accept=".json" /> <!-- ✅ New -->
+  <!-- Action Buttons -->
+  <button id="showQuoteBtn">Show New Quote</button>
+  <button id="exportQuotesBtn">Export Quotes</button>
+  <input type="file" id="importQuotesInput" accept=".json" />
 
-  <!-- The add quote form will be created via JS -->
+  <!-- Add Quote Form is injected by JS -->
 
   <script src="script.js"></script>
 </body>
 </html>
+
