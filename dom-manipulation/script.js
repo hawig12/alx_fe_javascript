@@ -46,7 +46,7 @@ async function postQuoteToServer(quote) {
 }
 
 // === Sync local quotes with server with conflict detection and resolution ===
-async function syncWithServer() {
+async function syncQuotes() {
   console.log("Syncing with server...");
   const serverData = await fetchQuotesFromServer();
 
@@ -72,12 +72,9 @@ async function syncWithServer() {
     }
   });
 
-  // Also check if any local quotes are not on server (simulate server overwrite)
-  // For simplicity, assume server data overrides local data in conflicts
   if (conflicts.length > 0) {
     handleConflicts(conflicts);
   } else {
-    // No conflicts - just update categories and notify if new quotes added
     populateCategories();
     showNotification("Quotes synced with server successfully.");
   }
@@ -85,6 +82,7 @@ async function syncWithServer() {
   // Save last synced state (deep clone)
   lastSyncedQuotes = JSON.parse(JSON.stringify(quotes));
 }
+
 
 // === Handle conflicts by notifying user and offering manual resolution ===
 function handleConflicts(conflicts) {
