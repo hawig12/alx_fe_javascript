@@ -1,26 +1,28 @@
-// Initial local quotes
+// Local quotes array
 const quotes = [
   { text: "The only limit to our realization of tomorrow is our doubts of today.", category: "Motivation" },
   { text: "In the middle of difficulty lies opportunity.", category: "Inspiration" },
   { text: "Knowledge is power.", category: "Education" }
 ];
 
-// ✅ Simulated "server" data
-let mockServerQuotes = [
-  { id: 1, text: "Stay hungry, stay foolish.", category: "Motivation" },
-  { id: 2, text: "Do or do not. There is no try.", category: "Inspiration" }
-];
+// ✅ Fetch quotes from a real API using async/await
+async function fetchQuotesFromServer() {
+  try {
+    const response = await fetch("https://jsonplaceholder.typicode.com/posts");
+    const data = await response.json();
 
-// ✅ Fetch quotes from server (simulated with Promise)
-function fetchQuotesFromServer() {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(mockServerQuotes);
-    }, 500); // Simulate network delay
-  });
+    // Simulate converting posts to quote format
+    return data.slice(0, 5).map(post => ({
+      text: post.title,
+      category: "Server"
+    }));
+  } catch (error) {
+    console.error("Failed to fetch from server:", error);
+    return [];
+  }
 }
 
-// ✅ Sync local with server and resolve conflicts
+// ✅ Sync local quotes with server data
 function syncWithServer() {
   console.log("Syncing with server...");
 
@@ -48,7 +50,7 @@ function syncWithServer() {
   });
 }
 
-// ✅ Show a random quote (optionally filtered)
+// ✅ Show a random quote
 function showRandomQuote(category = "all") {
   const filteredQuotes = category === "all"
     ? quotes
@@ -129,13 +131,13 @@ function populateCategories() {
   }
 }
 
-// ✅ Filter quotes and show random from category
+// ✅ Filter quotes and show one from selected category
 function filterQuotes(category) {
   localStorage.setItem('selectedCategory', category);
   showRandomQuote(category);
 }
 
-// ✅ Export quotes as JSON file
+// ✅ Export quotes to JSON file
 function exportQuotes() {
   const dataStr = JSON.stringify(quotes, null, 2);
   const blob = new Blob([dataStr], { type: "application/json" });
@@ -176,7 +178,7 @@ function importQuotes(event) {
   reader.readAsText(file);
 }
 
-// ✅ Show notification for sync/import actions
+// ✅ Show notification message
 function showNotification(message) {
   const box = document.getElementById("notificationBox");
   box.innerText = message;
