@@ -76,13 +76,12 @@ async function syncQuotes() {
     handleConflicts(conflicts);
   } else {
     populateCategories();
-    showNotification("Quotes synced with server successfully.");
+    showNotification("Quotes synced with server!");
   }
 
   // Save last synced state (deep clone)
   lastSyncedQuotes = JSON.parse(JSON.stringify(quotes));
 }
-
 
 // === Handle conflicts by notifying user and offering manual resolution ===
 function handleConflicts(conflicts) {
@@ -312,5 +311,5 @@ document.addEventListener('DOMContentLoaded', () => {
   showRandomQuote();
 
   // Periodic sync every 10 seconds
-  setInterval(syncWithServer, 10000);
+  setInterval(syncQuotes, 10000);
 });
